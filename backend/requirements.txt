@@ -1,0 +1,13 @@
+# For WebSocket server
+websockets==12.0
+# For P2P Encryption =XChaCha20, ECDH
+PyNaCl==1.5.0
+# For QR code generation
+qrcode==7.4.2
+Pillow==9.4.0
+# For network interface discovery
+netifaces==0.11.0
+# For ChaCha20Poly1305 encryption
+cryptography==43.0.1
+#For MessagePack serialization
+msgpack==1.0.8
