@@ -2,7 +2,7 @@
 
 import json
 import time
-from typing import Dict, Any, List, Callable, Optional
+from typing import Dict, Any, List, Callable, Optional, Coroutine
 from p2p_crypto import create_peer_session
 from file_store import create_message_store
 from datetime import datetime
@@ -13,8 +13,8 @@ class P2PPeer:
         self.ip_address = ip_address
         self.port = port
         self.sessions: Dict[str, Any] = {}
-        self.message_store = create_message_store()
-        self.on_message_received: Optional[Callable[[Dict], None]] = None
+        self.message_store = create_message_store() 
+        self.on_message_received: Optional[Callable[[Dict], Coroutine[Any, Any, None]]] = None
 
     def connect_to_peer(self, peer_name: str, peer_public_key: str) -> bool:
         try:
@@ -36,7 +36,7 @@ class P2PPeer:
             print(f"Send message error: {e}")
             return None
 
-    def receive_message(self, message_packet: Dict[str, Any]):
+    async def receive_message(self, message_packet: Dict[str, Any]):
         sender = message_packet.get("from")
         if not isinstance(sender, str) or sender not in self.sessions:
             return
@@ -52,7 +52,7 @@ class P2PPeer:
             }
             # use the callback to notify the higher level (WebSocket server)
             if self.on_message_received:
-                self.on_message_received(display_msg)
+                await self.on_message_received(display_msg)
         except Exception as e:
             print(f"Receive message error: {e}")
 
@@ -85,10 +85,10 @@ class P2PPeer:
 class P2PNetworkSimulator:
     def __init__(self):
         self.peers: Dict[str, P2PPeer] = {}
-        self.on_event: Optional[Callable[[Dict], None]] = None
+        self.on_event: Optional[Callable[[Dict], Coroutine[Any, Any, None]]] = None
 
-    def set_event_handler(self, handler: Callable[[Dict], None]):
-        """sets a callback for network-wide events."""
+    def set_event_handler(self, handler: Callable[[Dict], Coroutine[Any, Any, None]]):
+        #sets callback for network-wide events.
         self.on_event = handler
 
     def create_peer(self, name: str) -> P2PPeer:
@@ -112,18 +112,19 @@ class P2PNetworkSimulator:
         res2 = peer2.connect_to_peer(peer1_name, key1)
         return res1 and res2
 
-    def route_message(self, from_peer: str, to_peer: str, message: str):
+    async def route_message(self, from_peer: str, to_peer: str, message: str):
         if from_peer in self.peers and to_peer in self.peers:
             sender = self.peers[from_peer]
             receiver = self.peers[to_peer]
             message_packet = sender.send_message(to_peer, message)
             if message_packet:
-                receiver.receive_message(message_packet)
+                import asyncio
+                await receiver.receive_message(message_packet)
 
-    def _handle_peer_event(self, event_data: Dict):
-        """internal handler to propagate events up to the WebSocket server."""
+    async def _handle_peer_event(self, event_data: Dict):
+        #internal handler to propagate events up to the WebSocket server.
         if self.on_event:
-            self.on_event({
+            await self.on_event({
                 "type": "new_message",
                 "data": event_data
             })

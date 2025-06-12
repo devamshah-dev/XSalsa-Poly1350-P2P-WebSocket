@@ -43,20 +43,19 @@ def main():
     time.sleep(10)#startup-time
 
     print("\n[4] Launching UI now...")
-    
     alice_url = "http://localhost:3000/?peer=Alice&chatWith=Bob"
     bob_url = "http://localhost:3000/?peer=Bob&chatWith=Alice"
 
     try:
         # register the chrome executable with the webbrowser module
         webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(chrome_executable))
-
         # opens Alice in a browser window & Bob in another window
         print(f"   -> Opening Alice's window...")
         webbrowser.get('chrome').open_new(alice_url)
+        time.sleep(1)
         print(f"   -> Opening Bob's window...")
         subprocess.Popen([chrome_executable, "--incognito", bob_url])
-
+        
         print("\n--- Project is running! ---")
         print("Press Ctrl+C in this terminal to shut down all processes.")
 

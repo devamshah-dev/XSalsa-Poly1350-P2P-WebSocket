@@ -7,22 +7,38 @@ function useP2PWebSocket(url) {
   const [isConnected, setIsConnected] = useState(false);
   const ws = useRef(null);
   useEffect(() => {
+     // do nothing on WebSocket connection already exists.
+    if (ws.current) return;
+    // create the new WebSocket connection
     ws.current = new WebSocket(url);
-    ws.current.onopen = () => setIsConnected(true);
-    ws.current.onclose = () => setIsConnected(false);
-    ws.current.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === 'new_message') {
-        setMessages(prev => [...prev, message.data]);
-      } else if (message.type === 'response' && message.action === 'get_history') {
-        if (message.data.success) {
+    const socket = ws.current;
+    socket.onopen = () => setIsConnected(true);
+    socket.onclose = () => setIsConnected(false);
+
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === 'new_message') {
+          setMessages(prev => [...prev, message.data]);
+        } else if (message.type === 'response' && message.action === 'get_history') {
+          if (message.data.success) {
             setMessages(message.data.history);
+          }
         }
+      } catch (error) {
+          console.error("Failed to parse WebSocket message:", error);
       }
     };
+
+    // cleanup when the component unmounts
     return () => {
-      ws.current.close();
+        // check socket exists before trying to close it.
+        if (socket) {
+           socket.close();
+        }
+        ws.current = null; // clear the ref on cleanup
     };
+  // the empty dependency array [] ensures this effect runs only ONCE.
   }, [url]);
 
   const sendCommand = (action, payload) => {
@@ -38,25 +54,24 @@ function App() {
    const getInitialState = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const peerFromUrl = urlParams.get('peer');
-    const chatWithFromUrl = urlParams.get('chatWith');
+    const chatPeerFromUrl = urlParams.get('chatpeer');
 
     if (peerFromUrl) {
       //use URL specified peer.
       return {
         peerName: peerFromUrl,
-        chattingWith: chatWithFromUrl || ''
+        chattingPeer: chatPeerFromUrl || ''
       };
     } else {
       // else, fallback to localStorage.
       return {
         peerName: localStorage.getItem('p2p-peerName') || '',
-        chattingWith: localStorage.getItem('p2p-chattingWith') || ''
+        chattingPeer: localStorage.getItem('p2p-chattingPeer') || ''
       };
     }
   };
-  const initialState = getInitialState();
-  const [peerName, setPeerName] = useState(() => localStorage.getItem('p2p-peerName') || '');
-  const [chattingPeer, setchattingPeer] = useState(() => localStorage.getItem('p2p-chattingPeer') || '');
+  const [peerName, setPeerName] = useState(getInitialState().peerName);
+  const [chattingPeer, setchattingPeer] = useState(getInitialState().chattingPeer);
   const [messageInput, setMessageInput] = useState('');
   const { messages, isConnected, sendCommand, setMessages } = useP2PWebSocket('ws://localhost:8765');
   const messagesEndRef = useRef(null);
@@ -81,7 +96,6 @@ function App() {
       localStorage.removeItem('p2p-chattingPeer');
     }
   }, [chattingPeer]);
-
 
   // set up the peer on page load if the info exists auto.
   useEffect(() => {
@@ -110,18 +124,6 @@ function App() {
     setMessageInput('');
   };
 
-  // function to clear stored identity
-  const handleClearIdentity = () => {
-    // clear React state
-    setPeerName('');
-    setchattingPeer('');
-    // clear localStorage
-    localStorage.removeItem('p2p-peerName');
-    localStorage.removeItem('p2p-chattingPeer');
-    setMessages([]);
-    alert('This peer identity is cleared now.');
-  }
-
   return (
     <div className="App">
       <header className="App-header">
@@ -132,7 +134,7 @@ function App() {
 
       <div className="main-content">
         <div className="chat-panel full-width">
-          <h2>Chat with: <span className="peer-identity">{chattingWith || '...'}</span></h2>
+          <h2>Chat with: <span className="peer-identity">{chattingPeer || '...'}</span></h2>
           <div className="message-area">
             {messages.filter(m => 
                 (m.from === peerName && m.to === chattingPeer) || 
