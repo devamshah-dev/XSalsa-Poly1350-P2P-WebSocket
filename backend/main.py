@@ -60,7 +60,8 @@ async def handle_shutdown(payload):
 async def broadcast(message):
     #sends a message to all clients.
     if CONNECTED_CLIENTS:
-        await asyncio.wait([client.send(message) for client in CONNECTED_CLIENTS])
+        tasks = [client.send(message) for client in CONNECTED_CLIENTS]
+        await asyncio.gather(*tasks)
 
 async def event_handler(event):
     """Callback for events from the P2P engine."""

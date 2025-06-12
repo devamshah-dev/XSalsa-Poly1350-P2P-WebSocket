@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Callable, Optional, Coroutine
 from p2p_crypto import create_peer_session
 from file_store import create_message_store
 from datetime import datetime
+import asyncio
 
 class P2PPeer:
     def __init__(self, name: str, ip_address: str = "127.0.0.1", port: int = 5000):
@@ -52,7 +53,7 @@ class P2PPeer:
             }
             # use the callback to notify the higher level (WebSocket server)
             if self.on_message_received:
-                await self.on_message_received(display_msg)
+                asyncio.create_task(self.on_message_received(display_msg))
         except Exception as e:
             print(f"Receive message error: {e}")
 
@@ -124,7 +125,7 @@ class P2PNetworkSimulator:
     async def _handle_peer_event(self, event_data: Dict):
         #internal handler to propagate events up to the WebSocket server.
         if self.on_event:
-            await self.on_event({
+            asyncio.create_task(self.on_event({
                 "type": "new_message",
                 "data": event_data
-            })
+            }))

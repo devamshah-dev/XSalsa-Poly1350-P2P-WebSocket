@@ -29,21 +29,21 @@ echo.
 
 REM --- 2. Create Python virtual environment ---
 echo [2/4] Setting up Python virtual environment...
-if not exist "venv" (
-    echo      - Creating virtual environment 'venv'...
-    python -m venv venv
+if not exist ".venv" (
+    echo      - Creating virtual environment '.venv'...
+    python -m venv .venv
     if %errorlevel% neq 0 (
         echo [ERROR] Failed to create virtual environment.
         GOTO:Error
     )
 ) else (
-    echo      - Virtual environment 'venv' already exists.
+    echo      - Virtual environment '.venv' already exists.
 )
 echo.
 
 REM --- 3. Install Python dependencies ---
 echo [3/4] Installing Python dependencies from backend/requirements.txt...
-call "venv\Scripts\python.exe" -m pip install -r "backend\requirements.txt"
+call ".venv\Scripts\python.exe" -m pip install -r "backend\requirements.txt"
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install Python dependencies. Please check for errors above.
     GOTO:Error

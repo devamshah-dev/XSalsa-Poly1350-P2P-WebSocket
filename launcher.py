@@ -32,8 +32,9 @@ def main():
     print(f"backend process started with PID: {backend_process.pid}")
 
     print("\n[2] Starting frontend development server...")
+    npm_command = "npm.cmd" if use_shell else "npm"
     frontend_process = subprocess.Popen(
-        ["npm", "start"],
+        [npm_command, "run", "start:windows"],
         cwd=FRONTEND_DIR,
         shell=use_shell
     )
@@ -43,8 +44,8 @@ def main():
     time.sleep(10)#startup-time
 
     print("\n[4] Launching UI now...")
-    alice_url = "http://localhost:3000/?peer=Alice&chatWith=Bob"
-    bob_url = "http://localhost:3000/?peer=Bob&chatWith=Alice"
+    alice_url = "http://localhost:3000/?peer=Alice&chatpeer=Bob"
+    bob_url = "http://localhost:3000/?peer=Bob&chatpeer=Alice"
 
     try:
         # register the chrome executable with the webbrowser module

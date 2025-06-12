@@ -7,9 +7,8 @@ function useP2PWebSocket(url) {
   const [isConnected, setIsConnected] = useState(false);
   const ws = useRef(null);
   useEffect(() => {
-     // do nothing on WebSocket connection already exists.
     if (ws.current) return;
-    // create the new WebSocket connection
+    // create new WebSocket connection
     ws.current = new WebSocket(url);
     const socket = ws.current;
     socket.onopen = () => setIsConnected(true);
@@ -18,6 +17,7 @@ function useP2PWebSocket(url) {
     socket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+         console.log("WebSocket message received:", message);
         if (message.type === 'new_message') {
           setMessages(prev => [...prev, message.data]);
         } else if (message.type === 'response' && message.action === 'get_history') {
@@ -38,7 +38,7 @@ function useP2PWebSocket(url) {
         }
         ws.current = null; // clear the ref on cleanup
     };
-  // the empty dependency array [] ensures this effect runs only ONCE.
+  // empty dependency array []: effect runs only once.
   }, [url]);
 
   const sendCommand = (action, payload) => {
@@ -66,7 +66,7 @@ function App() {
       // else, fallback to localStorage.
       return {
         peerName: localStorage.getItem('p2p-peerName') || '',
-        chattingPeer: localStorage.getItem('p2p-chattingPeer') || ''
+        chattingPeer: localStorage.getItem('p2p-chattingPeer')
       };
     }
   };
@@ -75,6 +75,7 @@ function App() {
   const [messageInput, setMessageInput] = useState('');
   const { messages, isConnected, sendCommand, setMessages } = useP2PWebSocket('ws://localhost:8765');
   const messagesEndRef = useRef(null);
+  const setupCompleted = useRef(false);
 
   // save state changes in localStorage
   useEffect(() => {
@@ -99,16 +100,13 @@ function App() {
 
   // set up the peer on page load if the info exists auto.
   useEffect(() => {
-    if (peerName && isConnected) {
-      // bbackend connect to peer from localStorage.
+    if (peerName && chattingPeer && isConnected && !setupCompleted.current) {
+      console.log("Performing initial peer setup...");
       sendCommand('create_peer', { name: peerName });
-
-      if (chattingPeer) {
-        // re-establish the connection.
-        sendCommand('create_peer', { name: chattingPeer });
-        sendCommand('connect_peers', { peer1: peerName, peer2: chattingPeer });
-        sendCommand('get_history', { peer_a: peerName, peer_b: chattingPeer });
-      }
+      sendCommand('create_peer', { name: chattingPeer });
+      sendCommand('connect_peers', { peer1: peerName, peer2: chattingPeer });
+      sendCommand('get_history', { peer_a: peerName, peer_b: chattingPeer });
+      setupCompleted.current = true;
     }
   }, [peerName, chattingPeer, isConnected, sendCommand]);
   
@@ -120,7 +118,6 @@ function App() {
     e.preventDefault();
     if (!messageInput || !peerName || !chattingPeer) return;
     sendCommand('send_message', { from: peerName, to: chattingPeer, message: messageInput });
-    setMessages(prev => [...prev, { from: peerName, to: chattingPeer, message: messageInput, timestamp: new Date().toISOString() }]);
     setMessageInput('');
   };
 
