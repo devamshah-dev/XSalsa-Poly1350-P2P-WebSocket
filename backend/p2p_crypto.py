@@ -14,23 +14,19 @@ from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from datetime import datetime, timezone
 
 class CryptoManager:
-    """
-    - XChaCha20-Poly1305 encryption/decryption
-    - ECDH key exchange
-    - Key generation and storage
-    """
+    #XChaCha20= encryption+decryption,Poly1305=ECDH key exchange & generation & storage
     
     def __init__(self, keys_dir: str = "keys"):
         self.keys_dir = keys_dir
         self.ensure_keys_directory()
         
     def ensure_keys_directory(self):
-        """creating keys directory"""
+        #creating keys directory --> for storing per keys.
         if not os.path.exists(self.keys_dir):
             os.makedirs(self.keys_dir)
     
     def generate_keypair(self, peer_name: str) -> Tuple[str, str]:
-        """private_key base64, public_key base64"""
+        #private_key base64, public_key base64 --> issue3
         private_key = PrivateKey.generate()
         public_key = private_key.public_key
         
@@ -44,7 +40,7 @@ class CryptoManager:
         return private_key_b64, public_key_b64
     
     def save_private_key(self, peer_name: str, private_key_b64: str):
-        """saving private key to keys/ directory"""
+        #saving private key to keys/ directory
         key_file = os.path.join(self.keys_dir, f"{peer_name}_private.key")
         key_data = {
             "peer_name": peer_name,
@@ -57,7 +53,7 @@ class CryptoManager:
         print(f"Private key saved for {peer_name}: {key_file}")
     
     def load_private_key(self, peer_name: str) -> Optional[str]:
-        """load private key from keys dir"""
+        #will load private key from keys dir --> solved on 8/6/25.
         key_file = os.path.join(self.keys_dir, f"{peer_name}_private.key")
         if not os.path.exists(key_file):
             return None 
@@ -168,7 +164,7 @@ class P2PSession:
             return False
     
     def send_message(self, message: str) -> Dict[str, Any]:
-        """enccrypting and prepare message for sending"""
+        #enccrypting and prepare message for sending
         if not self.shared_secret:
             raise Exception("Session not established")
         encrypted_data = self.crypto_manager.encrypt_message(message, self.shared_secret)
@@ -200,8 +196,7 @@ class P2PSession:
         """return my public key for sharing"""
         return self.my_public_key
 
-
-# utility functions for easy usage
+# utility functions --> implemented after testing!
 def create_peer_session(my_name: str, peer_name: str, keys_dir: str = "keys") -> P2PSession:
     """creating a new P2P session"""
     crypto_manager = CryptoManager(keys_dir)

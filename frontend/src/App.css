@@ -121,3 +121,26 @@ button:disabled {
 .message-input-form button {
   margin-left: 10px;
 }
+.identity-display {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+.btn-clear {
+  background-color: #dc3545;
+}
+.btn-clear:hover {
+  background-color: #c82333;
+}
+.peer-identity {
+  color: #007bff;
+}
+
+.chat-panel.full-width {
+  flex-grow: 1;
+  max-width: 800px; /* Or whatever max-width you prefer */
+  min-width: 90%;
+}
